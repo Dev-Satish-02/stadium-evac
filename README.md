@@ -6,6 +6,12 @@ A Python framework for comparing four crowd-flow and emergency-evacuation models
 
 Each dot is a spectator, coloured by speed (red is stopped or queueing, blue is walking freely).
 
+## Video walkthrough
+
+[![Watch the walkthrough on YouTube](https://img.youtube.com/vi/IIM1ITQazN8/hqdefault.jpg)](https://youtu.be/IIM1ITQazN8)
+
+Click the thumbnail to watch the walkthrough: the four models, live simulation runs, results, and the JuPedSim validation.
+
 ## What it does
 
 - Builds three parametric stadiums from YAML files: a football bowl (41,355 people at 95 % occupancy, 20 gates), a cricket oval (40,603 people, 20 gates) and an indoor arena (7,771 people, 8 doors, sunken bowl).
@@ -182,7 +188,3 @@ tests/                          pytest unit tests
 4. S. M. V. Gwynne and E. R. Rosenbaum, "Employing the hydraulic model in assessing emergency movement," in SFPE Handbook of Fire Protection Engineering, 5th ed., Springer, 2016.
 5. A. Tordeux, M. Chraibi and A. Seyfried, "Collision-free speed model for pedestrian dynamics," in Traffic and Granular Flow '15, Springer, 2016, pp. 225 to 232.
 6. A. Seyfried et al., "New insights into pedestrian flow through bottlenecks," Transportation Science, 43(3), 395 to 406, 2009.
-
-## Authors
-
-Dev Satish and Hardik Agrawal
