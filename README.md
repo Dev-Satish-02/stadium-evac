@@ -8,9 +8,11 @@ Each dot is a spectator, coloured by speed (red is stopped or queueing, blue is 
 
 ## Video walkthrough
 
-[![Watch the walkthrough on YouTube](https://img.youtube.com/vi/IIM1ITQazN8/hqdefault.jpg)](https://youtu.be/IIM1ITQazN8)
-
-Click the thumbnail to watch the walkthrough: the four models, live simulation runs, results, and the JuPedSim validation.
+<p align="center">
+  <a href="https://youtu.be/IIM1ITQazN8">
+    <img src="https://img.youtube.com/vi/IIM1ITQazN8/hqdefault.jpg" alt="Watch the walkthrough on YouTube" width="480">
+  </a>
+</p>
 
 ## What it does
 
