@@ -1,31 +1,38 @@
-# Stadium crowd-flow and emergency-evacuation models (ME F340 project)
+# Stadium Evacuation Models
 
-Code-based framework that conceptualises four crowd-flow / evacuation models for
-stadiums and compares them under simulated conditions.
+A Python framework for comparing four crowd-flow and emergency-evacuation models on the same stadiums, the same crowds and the same scenarios. It answers one question: if only the model changes, how much does the predicted evacuation time change, and where do the models disagree most?
 
-**Status: Phases 0-3 complete + live simulation window + JuPedSim cross-check.**
-**Start with `RUN_GUIDE.md`** (every command from unzipping to report results). Contents: project skeleton, stadium generator and presets,
-crowd and scenarios, metrics (Phase 1); four models plus hybrid linkage (Phase 2);
-validation suite (Phase 3); `simulate` / `compare` commands to produce results.
+![Football bowl, emergency, social force model at 2:00, 4:00 and 6:40](docs/live_snapshots.png)
 
-| Model | Type | Idea |
-|---|---|---|
-| **M1 `sfpe`** Hydraulic (SFPE) | macroscopic, analytic | everyone takes the nearest exit; each route's *controlling component* (largest people / capacity) is a first-come-first-served queue at the SFPE capacity |
-| **M2 `ca`** Cellular automaton | microscopic, discrete | floor-field CA (0.4 m cells), density-dependent speed, friction, herding via a dynamic field |
-| **M3 `sf`** Social force | microscopic, continuous | Helbing (2000) forces, body contact and friction, herding (panic) parameter |
-| **M4 `network`** Queueing network | mesoscopic | element-by-element movement with SFPE capacities and storage, spill-back, congestion-aware route choice |
+Each dot is a spectator, coloured by speed (red is stopped or queueing, blue is walking freely).
 
-M2 and M3 are **hybrid** in the stadium: the network (M4) carries people from their
-seats through aisles, vomitories, upper concourses and stairs; the CA / social force
-model simulates the **exit concourse and gates** in 2-D. People wait on the element
-they arrived on until the concourse has room, so congestion backs up into the stands.
+## What it does
 
----
+- Builds three parametric stadiums from YAML files: a football bowl (41,355 people at 95 % occupancy, 20 gates), a cricket oval (40,603 people, 20 gates) and an indoor arena (7,771 people, 8 doors, sunken bowl).
+- Generates a seeded crowd with seats, mobility classes (adult, child, elderly, mobility impaired), walking speeds, body sizes and pre-movement delays.
+- Runs four models on identical crowds:
 
-## 1. Setup (Ubuntu, once)
+| Model | Key | Type | Idea |
+|---|---|---|---|
+| M1 Hydraulic (SFPE) | `sfpe` | macroscopic, analytic | Everyone takes the nearest exit. Each route is limited by its controlling component, served first-come-first-served at the SFPE capacity. |
+| M2 Cellular automaton | `ca` | microscopic, discrete | Floor-field model on 0.4 m cells with density-dependent speed, friction and herding. |
+| M3 Social force | `sf` | microscopic, continuous | Helbing-type forces with body contact, friction and a herding parameter. Numba-accelerated. |
+| M4 Queueing network | `network` | mesoscopic | Element-by-element movement with capacities, storage, spill-back and congestion-aware route choice. |
+
+- M2 and M3 are hybrids. The network carries people from seats through aisles, vomitories and stairs, and the detailed model runs on the exit concourse. People wait upstream until the concourse has room, so congestion backs up into the stands.
+- Height is handled without a 3-D simulation: each tier and concourse is a level, and stepped aisles, stairs and ramps are network elements with 3-D length, width, vertical drop and type.
+- Scores every run with the same metrics: T50, T90, T95, T100, mean gate flow, exit-load balance (CV), peak density, Fruin level of service and compute time.
+- Cross-checks the models against [JuPedSim](https://www.jupedsim.org) and PedPy.
+
+![Architecture](docs/architecture.png)
+
+## Setup
+
+Tested on Ubuntu with Python 3.10, 3.12 and 3.13.
 
 ```bash
-sudo apt update && sudo apt install -y python3-venv python3-pip   # only if venv is missing
+sudo apt update && sudo apt install -y python3-venv python3-pip python3-tk ffmpeg
+git clone <this repository>
 cd stadium-evac
 python3 -m venv .venv
 source .venv/bin/activate
@@ -33,165 +40,149 @@ pip install --upgrade pip
 pip install -r requirements.txt
 ```
 
-Tested on Python 3.10, 3.12 and 3.13. The first social-force run compiles its
-numba kernels (about 10-30 s once); later runs reuse the cache.
+The first social-force run compiles its Numba kernels (10 to 30 seconds once). `python3-tk` is needed for the live window and `ffmpeg` for recorded videos.
 
-## 2. Verify everything (in this order)
+## Verify the install
 
 ```bash
-source .venv/bin/activate
-python -m pytest -q            # unit tests              -> "66 passed"
-python run.py check-phase1     # stadiums, crowds, metrics -> "PHASE 1 CHECK: ALL 74 CHECKS PASSED"
-python run.py check-phase2     # all models x stadiums     -> "PHASE 2 CHECK: ALL 37 CHECKS PASSED" (~3-5 min)
-python run.py validate         # Phase 3 validation        -> "VALIDATION: ALL 18 HARD CHECKS PASSED (+ 2 observations)" (~1-2 min)
+python -m pytest -q          # unit tests
+python run.py check-phase1   # stadiums, crowds, metrics
+python run.py check-phase2   # all models on all stadiums (3 to 5 min)
+python run.py validate       # validation suite (1 to 2 min)
 ```
 
-Each command exits with status 0 only if everything passed.
+Each command exits with status 0 only if every check passes.
 
-## 3. Run simulations
+## Usage
 
 ```bash
-python run.py list                                     # presets, scenarios, models
+python run.py list           # available stadiums, scenarios and models
 
-# one model, one scenario (sweep scenarios run every value)
+# one model, one scenario
 python run.py simulate --stadium football_bowl --scenario emergency --model sf --seed 1
 
-# all four models on identical crowds, 3 random crowds each  (main command)
+# all four models on identical crowds, three random crowds each
 python run.py compare --stadium football_bowl --scenario emergency --seeds 3
 
-# a subset of models / parameter overrides / custom output folder
+# a subset of models, a blocked-exit scenario, an override of a model parameter
 python run.py compare --stadium indoor_arena --scenario blocked_exit --models sfpe,network --seeds 5
-python run.py compare --stadium football_bowl --scenario emergency --models sf --seeds 3 \
-    --set sf.tau=0.8 --out results/sensitivity/sf_tau_0.8
+python run.py compare --stadium football_bowl --scenario emergency --models sf --seeds 3 --set sf.tau=0.8 --out results/sensitivity/sf_tau_0.8
 ```
 
-Batch scripts (run from this folder with the venv active):
+### Watch a run live
 
 ```bash
-bash scripts/part1_model_comparison.sh     # Part 1: 4 models on the football bowl, 6 scenarios (~45-90 min)
-bash scripts/part2_stadium_comparison.sh   # Part 2 preview: 3 stadiums x scenarios (~60-120 min)
-bash scripts/sensitivity_examples.sh       # parameter sensitivity examples (~15-30 min)
-```
-
-Times are for a typical laptop; one `compare` with all models and one seed takes
-about 1.5-2.5 min on the large stadiums (CA is the slowest model, SFPE the fastest).
-
-## 3a. Watch a simulation live (window) - see RUN_GUIDE.md
-
-```bash
-sudo apt install -y python3-tk ffmpeg      # once: window + video support
 python run.py live --stadium football_bowl --scenario emergency --models all --seed 1 --record
-bash scripts/live_three_stadiums.sh        # the three stadiums one after another
+bash scripts/live_three_stadiums.sh
 ```
 
-The window draws the run while it is computed (SPACE pause, Q close); afterwards all CSVs and
-figures are in `results/live/<stadium>/<scenario>/` and the recorded MP4 next to them.
+The window draws the run while it is computed (SPACE pauses, Q closes). Afterwards, CSVs and figures are written to `results/live/<stadium>/<scenario>/`, with the MP4 next to them when `--record` is used.
 
-## 3c. Cross-check with JuPedSim
-
-```bash
-pip install -r requirements-jupedsim.txt
-python run.py jupedsim-verify --live       # room bottleneck + indoor arena concourse in JuPedSim
-bash scripts/jupedsim_verify.sh            # all three stadiums
-```
-
-Results and explanation: `results/jupedsim/jupedsim_report.md`, RUN_GUIDE.md section 5.
-
-## 3b. Replay videos (watch the simulation run)
+### Replay videos
 
 ```bash
-# one video with the three spatial models side by side on the SAME crowd (takes ~10-20 min for the football bowl)
 python run.py animate --stadium football_bowl --scenario emergency --models network,ca,sf --seed 1
-
-# quick preview with 20 % of the crowd (~1-2 min)
 python run.py animate --stadium indoor_arena --scenario blocked_exit --crowd-fraction 0.2 --frame-dt 3
 ```
 
-Four ready-made videos: `bash scripts/make_videos.sh`.
+### JuPedSim cross-check
 
-Output: `results/animations/<stadium>/<scenario>_<models>_seed<k>.mp4` (a GIF if `ffmpeg` is not installed:
-`sudo apt install ffmpeg`). Plan view, one panel per model, people coloured by speed (red = stopped,
-blue = free walking, grey = still seated), closed gates marked X, a live clock and an evacuation curve
-underneath. Options: `--frame-dt` (simulated seconds per video frame, default 2), `--fps`, `--marker-size`,
-`--set KEY=VALUE`. SFPE (M1) is an analytic calculation with no movement, so it is not animated.
-Dots on the exit concourse are the true CA / social-force positions; in the stands (rows, aisles,
-vomitories, stairs) they are placed along their route from the network model's progress. Levels overlap in
-plan view (stands, concourse and stairs are drawn on top of each other).
+```bash
+pip install -r requirements-jupedsim.txt
+python run.py jupedsim-verify --live
+```
 
-## 4. Where results go
+This runs a single-door bottleneck test (180 people, door widths 1.2 to 3.6 m) and replays the concourse of each stadium with the same arrivals.
 
-`results/compare/<stadium>/<scenario>/` (sweeps: one sub-folder per value plus `sweep.png`, `sweep_summary.csv`):
+## Scenarios
+
+| Scenario | Description |
+|---|---|
+| `normal_egress` | End-of-match exit: normal speeds, departures spread out (median 60 s), no herding |
+| `emergency` | Alarm-triggered, all gates open: walking speed x1.2, pre-movement median 30 s, mild herding |
+| `blocked_exit` | Emergency with gates G0 and G1 closed |
+| `exit_width_sweep` | Emergency repeated with every gate width scaled by a sweep factor |
+| `mixed_crowd` | Emergency with a larger share of children, elderly and mobility-impaired spectators |
+| `panic` | Near-instant reaction, speed x1.6, strong herding |
+| `pitch_refuge` | Emergency with pitch gates open as an extra escape route (cricket oval only) |
+
+Parameters live in `config/`. All model parameters are in `config/models.yaml`.
+
+## Output
+
+`results/compare/<stadium>/<scenario>/` contains:
 
 | File | Content |
 |---|---|
-| `summary.md`, `summary.csv` | mean +/- sd per model: T50, T90, T95, T100, evacuated fraction, gate flow, exit-load CV, peak density, time at >= 4 p/m2, T90 per tier and per mobility class, compute time |
-| `runs.csv` | one row per (model, seed) |
-| `evacuation_curves.png` | fraction evacuated vs time, every model and seed |
-| `evacuation_times.png` | T50 / T90 / T100 bars with error bars |
-| `exit_usage.png` | people per gate per model (closed gates marked) |
-| `density_over_time.png` | highest density over time (network, CA, SF) |
-| `density_maps_peak.png` | exit concourse at the moment of peak density (CA, SF) |
+| `summary.md`, `summary.csv` | Mean and standard deviation per model: T50, T90, T95, T100, gate flow, exit-load CV, peak density, T90 per tier and per mobility class, compute time |
+| `runs.csv` | One row per model and seed |
+| `evacuation_curves.png` | Fraction evacuated against time |
+| `evacuation_times.png` | T50, T90 and T100 per model |
+| `exit_usage.png` | People per gate |
+| `density_over_time.png`, `density_maps_peak.png` | Density against time, and the concourse at peak density |
 | `t90_by_group.png` | T90 per tier and mobility class |
-| `compute_time.png` | computational cost (log scale) |
-| `runs/<model>/seed<k>/` | `agents.csv` (every person: exit time, gate, tier, class, speed, ...), `timeseries.csv`, `summary.json` |
+| `compute_time.png` | Computational cost |
+| `runs/<model>/seed<k>/` | Per-person exit times and gates, time series, summary |
 
-`results/runs/...` (from `simulate`) has the same files for one run plus
-`run_overview.png`, `density_timeseries.png`, `density_map_peak.png`.
-`results/validation/` holds the validation CSVs, figures and `validation_report.md`.
+## Findings from the included runs
 
-See `report/OBSERVATIONS_GUIDE.md` for what to record from each output.
+Single random seed, emergency and blocked-exit scenarios, all 24 runs evacuated everyone.
 
-## 5. Project layout
+![T50, T90 and T100 for every model, stadium and scenario](docs/evacuation_times.png)
+
+- All four models put T90 at roughly 8 to 12 minutes for the two large stadiums.
+- The spread between the fastest and slowest model is 11 to 30 % in the emergency scenario and up to 42 % when two gates are blocked.
+- Football emergency T90: hydraulic 568 s, cellular automaton 514 s, social force 497 s, network 538 s.
+- Closing G0 and G1 raises T90 by up to 43 % (arena, hydraulic model). The arena shows the largest disagreement: the capacity-based models predict much longer times than the two detailed models, because one door ends up carrying about 2,580 people.
+
+![Effect of blocking two gates, gate-load imbalance and compute time](docs/blocked_exit_effects.png)
+
+- Compute time on the football bowl: hydraulic about 0.01 s, network 3.4 s, social force 9.6 s, cellular automaton 16.9 s.
+- Against JuPedSim, this project's social force model matches person by person on the concourse replay (correlation 0.9996 football, 0.9966 cricket, 0.9995 arena).
+
+![Validation against JuPedSim](docs/jupedsim_validation.png)
+
+## Limitations
+
+- The results use one random seed, so differences between models cannot yet be separated from chance. Use `--seeds N` for averages and spreads.
+- The cellular automaton reports a peak density fixed at 6.25 people per m2 (one person per 0.4 m cell), so its crush indicator is always on. Treat it as a model artefact.
+- The network model caps density at 3.5 people per m2.
+- T100 depends on a single last person, so T90 is the main comparison metric.
+- The JuPedSim social force model aborted in 8 of 12 single-door runs in the included tests, a few seconds after the start, when a person was pushed outside the walkable area near the door.
+- No counter-flow, the detailed models run only on the exit concourse, and the floor field in the cellular automaton and social force models is static (nearest exit).
+- The stadium geometry and the crowd parameters are assumptions, not measurements from a real venue or a real evacuation.
+
+## Project layout
 
 ```
-run.py                         single entry point
-config/stadiums/*.yaml         football_bowl, cricket_oval, indoor_arena
-config/scenarios/*.yaml        normal_egress, emergency, blocked_exit, exit_width_sweep, mixed_crowd, panic, pitch_refuge
-config/crowd/population.yaml   mobility classes (speeds, body sizes), pre-movement
-config/models.yaml             ALL model parameters (with sources / calibration notes)
-crowdsim/geometry/             field curve and offset curves (bowl coordinates)
-crowdsim/stadium/              preset schema, generator, navigation graph, checks, figures
-crowdsim/crowd/                population, scenarios, agents
-crowdsim/metrics/              shared metrics (times, flows, exit balance, density, Fruin LOS)
-crowdsim/models/movement.py    shared SFPE movement rules (speed-density, capacity, widths)
-crowdsim/models/egressnet.py   array form of the navigation graph
-crowdsim/models/sfpe.py        M1 hydraulic / SFPE
-crowdsim/models/ca.py          M2 cellular automaton
-crowdsim/models/sf.py          M3 social force (numba)
-crowdsim/models/network.py     M4 queueing network
-crowdsim/models/domain.py      2-D domains for CA/SF (floor field, wall distance)
-crowdsim/models/hybrid.py      network upstream + CA/SF on the exit concourse
-crowdsim/validation/suite.py   Phase 3 validation
-crowdsim/experiments/runner.py simulate / compare
-crowdsim/experiments/animate.py animate (replay video)
-crowdsim/animation/            position recorder, live window, video renderer
-crowdsim/experiments/live.py   live (watch a run, then save results)
-crowdsim/verification/         JuPedSim cross-check
-crowdsim/analysis/plots.py     figures
-crowdsim/checks/               phase-1 and phase-2 end-to-end checks
-scripts/                       batch runs for Part 1, Part 2, sensitivity
-tests/                         pytest unit tests
+run.py                          single entry point
+config/stadiums/*.yaml          football_bowl, cricket_oval, indoor_arena
+config/scenarios/*.yaml         scenario definitions
+config/crowd/population.yaml    mobility classes and pre-movement
+config/models.yaml              all model parameters
+crowdsim/geometry/              field curve and offset curves
+crowdsim/stadium/               presets, generator, navigation graph, checks
+crowdsim/crowd/                 population, scenarios, agents
+crowdsim/metrics/               shared metrics
+crowdsim/models/                sfpe, ca, sf, network, hybrid, 2-D domains
+crowdsim/validation/            validation suite
+crowdsim/experiments/           simulate, compare, animate, live
+crowdsim/animation/             live window and video renderer
+crowdsim/verification/          JuPedSim cross-check
+crowdsim/analysis/              figures
+scripts/                        batch runs
+tests/                          pytest unit tests
 ```
 
-## 6. Modelling notes (for the methodology section)
+## References
 
-* **Height without 3-D:** each tier and concourse is a level; stepped aisles, vomitories,
-  stairs and ramps are network elements with 3-D length, width, vertical drop and type.
-  Speeds on stairs/aisles use the SFPE k-values (and a reduction when climbing).
-* **Same inputs for every model:** one crowd per seed (seats, speeds, body size,
-  pre-movement) is given to all four models; all are scored by `crowdsim/metrics`.
-* **Calibration (see `results/validation/`):**
-  CA - density-dependent speed (SFPE ratio, floor 0.3) and k_s = 8, otherwise a 0.4 m CA
-  passes ~4-5 p/(m s) and walks ~20 % slow in corridors (lattice artefact).
-  SF - Helbing parameters with a 0.07 m personal-space margin (adult radius ~0.30 m),
-  speed cap = desired speed, semi-implicit friction for numerical stability, a small
-  random force so arches at narrow doors can break.
-* **Known limitations to discuss:** no counter-flow, micro models only on the exit
-  concourse, static (nearest-exit) floor field in CA/SF, SFPE values are design values
-  (conservative), all geometry and crowd values are assumptions to be cited.
+1. C. Burstedde, K. Klauck, A. Schadschneider and J. Zittartz, "Simulation of pedestrian dynamics using a two-dimensional cellular automaton," Physica A, 295, 507 to 525, 2001.
+2. A. Kirchner and A. Schadschneider, "Simulation of evacuation processes using a bionics-inspired cellular automaton model for pedestrian dynamics," Physica A, 312, 260 to 276, 2002.
+3. D. Helbing, I. Farkas and T. Vicsek, "Simulating dynamical features of escape panic," Nature, 407, 487 to 490, 2000.
+4. S. M. V. Gwynne and E. R. Rosenbaum, "Employing the hydraulic model in assessing emergency movement," in SFPE Handbook of Fire Protection Engineering, 5th ed., Springer, 2016.
+5. A. Tordeux, M. Chraibi and A. Seyfried, "Collision-free speed model for pedestrian dynamics," in Traffic and Granular Flow '15, Springer, 2016, pp. 225 to 232.
+6. A. Seyfried et al., "New insights into pedestrian flow through bottlenecks," Transportation Science, 43(3), 395 to 406, 2009.
 
-## 7. Troubleshooting
+## Authors
 
-* `python3 -m venv` fails: install `python3-venv` (step 1).
-* `ModuleNotFoundError`: activate the venv and run commands from the `stadium-evac` folder.
-* Any FAIL line: send the full terminal output.
+Dev Satish and Hardik Agrawal
