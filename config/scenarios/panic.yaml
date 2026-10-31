@@ -1,0 +1,11 @@
+# Panic: very short reaction time, high desired speed, strong herding.
+# Used to test "faster-is-slower" at bottlenecks in the microscopic models (Phase 2).
+name: panic
+description: Panic evacuation - near-instant reaction, high desired speed, strong tendency to follow others.
+occupancy: 0.95
+speed_factor: 1.6
+premovement: {median: 5.0, sigma: 0.5}
+blocked_exits: []
+exit_width_factor: 1.0
+use_pitch_gates: false
+herding: 0.6

@@ -1,0 +1,90 @@
+# Cricket oval: large elliptical ground, two tiers, pitch gates onto the field,
+# upper concourse linked to the ground by stairs AND long accessible ramps.
+# Dimensions are representative design values (assumptions), not a real venue.
+
+name: Cricket oval (2 tiers, pitch gates)
+sport: cricket
+description: >
+  Large oval ground. Lower tier has a mid-tier cross-aisle and pitch gates at
+  the front that can open onto the outfield in an emergency. Upper tier exits
+  via front vomitories to an upper concourse, with stairs and 1:12 ramps
+  down to the ground concourse.
+
+seat_width: 0.50
+
+field:
+  shape: superellipse
+  a: 80.0
+  b: 72.0
+  n: 2.0                    # true ellipse
+
+tiers:
+  - id: lower
+    rows: 22
+    row_depth: 0.80
+    riser: 0.30
+    d_start: 3.0
+    z_base: 0.5
+    aisles: 48
+    aisle_width: 1.3
+    aisle_phase: 0.5
+    cross_aisle:
+      row: 11
+      width: 1.8
+    vomitories:
+      every: 2
+      offset: 0
+      width: 3.0
+      min_length: 6.0
+      concourse: ground
+    pitch_gates:            # gates in the boundary wall onto the field (closed unless a scenario opens them)
+      every: 4
+      offset: 1
+      width: 1.5
+
+  - id: upper
+    rows: 18
+    row_depth: 0.85
+    riser: 0.45
+    d_start: 23.0
+    z_base: 9.0
+    aisles: 56
+    aisle_width: 1.3
+    aisle_phase: 0.5
+    cross_aisle:
+      row: 0
+      width: 2.0
+    vomitories:
+      every: 2
+      offset: 0
+      width: 3.0
+      min_length: 8.0
+      concourse: level1
+
+concourses:
+  - id: ground
+    z: 0.0
+    d_inner: 10.0
+    d_outer: 20.0
+    exits:
+      count: 20
+      width: 3.6
+      phase: 0.25
+
+  - id: level1             # upper concourse (level ids must be unique)
+    z: 8.0
+    d_inner: 24.0
+    d_outer: 32.0
+    connectors:
+      - kind: stair
+        to: ground
+        count: 12
+        width: 3.6
+        angle_deg: 32
+        phase: 0.0625
+      - kind: ramp
+        to: ground
+        count: 4
+        width: 4.0
+        angle_deg: 4.8      # about 1:12 gradient - long but step-free
+        phase: 0.1875

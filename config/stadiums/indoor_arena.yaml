@@ -1,0 +1,49 @@
+# Indoor arena: compact, near-rectangular sunken bowl around a court.
+# The concourse is at street level at the TOP of the bowl, so every spectator
+# climbs the aisle steps to leave - the opposite of the open-air stadiums.
+# Dimensions are representative design values (assumptions), not a real venue.
+
+name: Indoor arena (sunken bowl)
+sport: basketball / indoor
+description: >
+  Single sunken tier around a 28 x 15 m court. Rows step up from the court
+  (below street level) to a cross-aisle at the back; vomitories lead onto a
+  street-level concourse with a small number of exit doors.
+
+seat_width: 0.50
+
+field:
+  shape: superellipse
+  a: 22.0
+  b: 15.0
+  n: 6.0                    # close to a rectangle
+
+tiers:
+  - id: bowl
+    rows: 24
+    row_depth: 0.80
+    riser: 0.40
+    d_start: 2.0
+    z_base: -9.6            # court floor is 9.6 m below street level
+    aisles: 24
+    aisle_width: 1.3
+    aisle_phase: 0.5
+    cross_aisle:
+      row: 24               # = rows: gangway at the back, everyone walks UP
+      width: 1.8
+    vomitories:
+      every: 2
+      offset: 0
+      width: 2.4
+      min_length: 3.0
+      concourse: main
+
+concourses:
+  - id: main
+    z: 0.0                  # street level
+    d_inner: 23.5
+    d_outer: 31.5
+    exits:
+      count: 8
+      width: 2.4
+      phase: 0.25

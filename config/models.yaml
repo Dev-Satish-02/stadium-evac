@@ -1,0 +1,65 @@
+# Parameters of the four evacuation models and the shared movement rules.
+# Values marked (SFPE) follow the SFPE Handbook hydraulic method; (Helbing 2000)
+# the social force model of Helbing, Farkas & Vicsek (Nature 407, 2000);
+# (Burstedde 2001 / Kirchner 2002) the floor-field cellular automaton.
+# Others are modelling assumptions - state them in the report.
+
+movement:                     # shared by ALL models so that differences come from the model, not the inputs
+  sfpe_a: 0.266               # (SFPE) speed S = k (1 - a D), D in persons/m^2
+  d_free: 0.54                # (SFPE) below this density people walk at full speed
+  k:                          # (SFPE) speed constant k [m/s] by element type
+    level: 1.40               # corridor, concourse, door, level vomitory
+    ramp: 1.40
+    stair: 1.08               # stair with 7 in riser / 11 in tread
+    aisle: 1.00               # stepped seating aisle, treated as a steep stair (assumption)
+  boundary_layer:             # (SFPE) unusable width at EACH side of an element [m]
+    aisle: 0.0                # stadium benches / seats
+    cross_aisle: 0.0
+    vomitory: 0.20            # tunnel walls
+    concourse: 0.46           # wide concourse
+    stair: 0.15
+    ramp: 0.20
+    exit: 0.15                # door / gate
+    pitch_access: 0.15
+  ascending_factor: 0.85      # extra speed reduction when climbing stairs/aisles (assumption)
+  row_factor: 0.75            # sideways shuffle along a seat row, relative to level walking (assumption)
+  jam_density: 3.5            # max persons/m^2 stored on a network element (SFPE speed -> 0 at 3.76)
+
+sfpe:                         # Model 1: hydraulic / SFPE calculation
+  description: Controlling-component hand calculation on the egress network.
+
+network:                      # Model 4: mesoscopic queueing network (also drives the hybrid models upstream)
+  dt: 0.5                     # time step [s]
+  routing: dynamic            # dynamic = congestion-aware choice at junctions; static = always nearest exit
+  t_max: 3600.0               # stop after this simulated time [s]
+
+ca:                           # Model 2: floor-field cellular automaton (Burstedde 2001 / Kirchner 2002)
+  k_s: 8.0                    # sensitivity to the static floor field (per cell of progress; calibrated, see validation V1)
+  k_d: 2.0                    # sensitivity to the dynamic field (scaled by scenario herding)
+  alpha: 0.30                 # dynamic field diffusion
+  delta: 0.30                 # dynamic field decay
+  friction: 0.10              # base friction mu (conflict -> nobody moves)
+  friction_herding: 0.40      # extra friction per unit herding (panic increases conflicts)
+  min_speed_ratio: 0.30       # density-dependent speed floor (1.0 = classic CA without slowdown; see validation)
+
+sf:                           # Model 3: social force model (Helbing 2000)
+  dt: 0.02                    # time step [s]
+  tau: 0.5                    # relaxation time [s]
+  mass: 80.0                  # [kg]
+  A: 2000.0                   # social repulsion strength [N]
+  B: 0.08                     # social repulsion range [m]
+  k_body: 120000.0            # body compression [kg/s^2]
+  kappa: 240000.0             # sliding friction [kg/(m s)]
+  cutoff: 1.5                 # interaction radius [m]
+  vmax_factor: 1.0            # speed cap = factor x desired speed (calibrated, see validation)
+  herd_radius: 2.0            # radius for herding (panic parameter p = scenario herding) [m]
+  space_margin: 0.07          # personal space added to the body radius (adult ~0.30 m, Helbing's 0.25-0.35 m range)
+  noise: 50.0                 # std of the random fluctuation force per component [N] (0 = deterministic)
+  wall_cell: 0.15             # resolution of the wall-distance field [m]
+
+micro:                        # shared by the CA and SF models (hybrid: they run on the exit concourse)
+  nav_cell: 0.40              # navigation (floor-field) grid [m]; also the CA cell size (one person per cell)
+  exit_depth: 1.2             # depth of the exit strip beyond a gate [m]
+  density_cell: 1.2           # density measurement grid [m]; a multiple of nav_cell so CA cells are counted exactly
+  record_dt: 5.0              # time-series / density sampling interval [s]
+  stall_time: 600.0           # stop if nobody leaves for this long [s]

@@ -1,0 +1,11 @@
+# Emergency where the pitch gates are opened so the field can be used as a place of safety.
+# Only changes anything in stadiums that have pitch gates (cricket_oval); elsewhere it equals 'emergency'.
+name: pitch_refuge
+description: Emergency evacuation with pitch gates open onto the field as an additional escape route.
+occupancy: 0.95
+speed_factor: 1.2
+premovement: {median: 30.0, sigma: 0.6}
+blocked_exits: []
+exit_width_factor: 1.0
+use_pitch_gates: true
+herding: 0.1

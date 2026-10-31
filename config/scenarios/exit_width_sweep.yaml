@@ -1,0 +1,13 @@
+# Emergency evacuation repeated for several gate widths (design sensitivity).
+# Expands into one scenario per value, named exit_width_sweep@exit_width_factor=<value>.
+name: exit_width_sweep
+description: Emergency evacuation with every gate width scaled by the sweep factor.
+occupancy: 0.95
+speed_factor: 1.2
+premovement: {median: 30.0, sigma: 0.6}
+blocked_exits: []
+use_pitch_gates: false
+herding: 0.1
+sweep:
+  param: exit_width_factor
+  values: [0.5, 0.75, 1.0, 1.25, 1.5]

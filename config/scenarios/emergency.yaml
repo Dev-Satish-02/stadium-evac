@@ -1,0 +1,10 @@
+# Emergency evacuation with an alarm: faster walking, shorter and tighter pre-movement.
+name: emergency
+description: Alarm-triggered evacuation, all gates open, moderately hurried walking.
+occupancy: 0.95
+speed_factor: 1.2
+premovement: {median: 30.0, sigma: 0.6}
+blocked_exits: []
+exit_width_factor: 1.0
+use_pitch_gates: false
+herding: 0.1

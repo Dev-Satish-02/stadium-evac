@@ -1,0 +1,83 @@
+# Football (soccer) bowl: closed rounded-rectangle bowl, two tiers.
+# Reference stadium for Part 1 (model comparison).
+#
+# Bowl coordinates: s = position around the field (0..1, anticlockwise from +x),
+# d = outward distance from the field boundary [m]. All lengths in metres.
+# Dimensions are representative design values (assumptions), not a real venue.
+
+name: Football bowl (2 tiers)
+sport: football
+description: >
+  Closed two-tier bowl around a 105 x 68 m pitch. Lower tier exits through
+  mid-tier vomitories to a ground-level concourse; upper tier exits through
+  front vomitories to an upper concourse, then down stairs to the ground
+  concourse and out through perimeter gates.
+
+seat_width: 0.50            # seat centre spacing along a row
+
+field:                      # boundary of the seating front (pitch + run-off)
+  shape: superellipse
+  a: 60.0                   # half-length along x
+  b: 42.0                   # half-width along y
+  n: 4.0                    # 2 = oval, 4 = rounded rectangle, 6+ = near-rectangular
+
+tiers:
+  - id: lower
+    rows: 26
+    row_depth: 0.80         # row tread depth
+    riser: 0.35             # height gained per row
+    d_start: 4.0            # front row edge, distance from field boundary
+    z_base: 0.6             # floor height of the front row
+    aisles: 40              # radial aisles = seating blocks
+    aisle_width: 1.3
+    aisle_phase: 0.5        # shifts aisles by half a block (keeps an aisle off s = 0)
+    cross_aisle:            # lateral gangway in front of this row index
+      row: 13               # mid-tier: front half walks up, back half walks down
+      width: 1.8
+    vomitories:
+      every: 2              # a vomitory on every 2nd aisle
+      offset: 0
+      width: 3.0
+      min_length: 6.0       # tunnel length lower bound
+      concourse: ground
+
+  - id: upper
+    rows: 22
+    row_depth: 0.85
+    riser: 0.50             # steeper rake in the upper tier
+    d_start: 27.0
+    z_base: 11.0
+    aisles: 48
+    aisle_width: 1.3
+    aisle_phase: 0.5
+    cross_aisle:
+      row: 0                # gangway at the front: everyone walks DOWN the tier
+      width: 2.0
+    vomitories:
+      every: 2
+      offset: 0
+      width: 3.0
+      min_length: 8.0
+      concourse: level1
+
+concourses:
+  - id: ground
+    z: 0.0
+    d_inner: 14.0           # concourse runs under the lower tier
+    d_outer: 24.0
+    exits:
+      count: 20             # perimeter gates, evenly spaced
+      width: 3.6
+      phase: 0.25
+
+  - id: level1             # upper concourse (level ids must be unique)
+    z: 10.0
+    d_inner: 28.0
+    d_outer: 36.0
+    connectors:             # vertical links down to a lower concourse
+      - kind: stair
+        to: ground
+        count: 16
+        width: 3.6
+        angle_deg: 32       # typical stair pitch
+        phase: 0.0625

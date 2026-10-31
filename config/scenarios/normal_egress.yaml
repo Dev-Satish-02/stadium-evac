@@ -1,0 +1,10 @@
+# End-of-match egress: no emergency, people leave over a spread of times.
+name: normal_egress
+description: Full-time whistle, normal walking speeds, all gates open, departures spread out.
+occupancy: 0.95
+speed_factor: 1.0
+premovement: {median: 60.0, sigma: 0.8}   # assumption: wide spread of leaving times
+blocked_exits: []
+exit_width_factor: 1.0
+use_pitch_gates: false
+herding: 0.0

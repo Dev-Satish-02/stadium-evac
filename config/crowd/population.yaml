@@ -1,0 +1,31 @@
+# Default crowd composition and walking characteristics.
+#
+# IMPORTANT: these are starting assumptions. Before the report, replace or
+# confirm each value with a cited source (e.g. Weidmann 1993 for free walking
+# speed; SFPE Handbook / Fruin for stairs and densities; an anthropometric
+# survey for body size) and record the source in the report's assumptions table.
+#
+# speed  : free (unobstructed) walking speed on the level [m/s], truncated normal
+# radius : body radius used by the microscopic models [m], ~ half shoulder breadth
+
+classes:
+  adult:
+    share: 0.80
+    speed:  {mean: 1.34, sd: 0.26, min: 0.60, max: 2.20}   # Weidmann (1993) mean 1.34 m/s
+    radius: {mean: 0.23, sd: 0.015}
+  child:
+    share: 0.08
+    speed:  {mean: 1.10, sd: 0.25, min: 0.50, max: 1.90}
+    radius: {mean: 0.18, sd: 0.015}
+  elderly:
+    share: 0.10
+    speed:  {mean: 0.95, sd: 0.20, min: 0.45, max: 1.50}
+    radius: {mean: 0.23, sd: 0.015}
+  mobility_impaired:
+    share: 0.02
+    speed:  {mean: 0.70, sd: 0.15, min: 0.30, max: 1.10}
+    radius: {mean: 0.30, sd: 0.020}                          # includes walking aids
+
+# Pre-movement time (alarm/whistle -> start moving) [s], lognormal.
+# A scenario can override it.
+premovement: {median: 30.0, sigma: 0.6}

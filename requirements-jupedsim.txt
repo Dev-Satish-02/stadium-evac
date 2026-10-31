@@ -1,0 +1,4 @@
+# Optional: JuPedSim cross-check (python run.py jupedsim-verify)
+jupedsim>=1.3
+pedpy>=1.1
+shapely>=2.0

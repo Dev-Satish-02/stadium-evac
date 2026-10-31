@@ -1,0 +1,15 @@
+# Emergency evacuation of a crowd with many slower people (family / community event).
+name: mixed_crowd
+description: Emergency evacuation with a high share of children, elderly and mobility-impaired spectators.
+occupancy: 0.95
+speed_factor: 1.2
+premovement: {median: 30.0, sigma: 0.6}
+mix:
+  adult: 0.60
+  child: 0.15
+  elderly: 0.20
+  mobility_impaired: 0.05
+blocked_exits: []
+exit_width_factor: 1.0
+use_pitch_gates: false
+herding: 0.1

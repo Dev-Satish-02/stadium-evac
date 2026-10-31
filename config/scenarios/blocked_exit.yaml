@@ -1,0 +1,11 @@
+# Emergency with two adjacent gates unusable (e.g. fire or crowd crush outside).
+# Gate indices refer to G0, G1, ... shown in the level plans; every preset has >= 2 gates.
+name: blocked_exit
+description: Emergency evacuation with gates G0 and G1 blocked.
+occupancy: 0.95
+speed_factor: 1.2
+premovement: {median: 30.0, sigma: 0.6}
+blocked_exits: [0, 1]
+exit_width_factor: 1.0
+use_pitch_gates: false
+herding: 0.1
